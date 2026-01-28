@@ -1,0 +1,1 @@
+/usr/bin/c++ CMakeFiles/secureP2P.dir/src/main.cpp.o CMakeFiles/secureP2P.dir/src/server.cpp.o CMakeFiles/secureP2P.dir/src/client.cpp.o -o secureP2P 
