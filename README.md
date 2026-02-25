@@ -125,7 +125,7 @@ graph TB
         M[RLIMIT_CORE = 0]
         N[PR_SET_DUMPABLE = 0]
         O[PR_SET_PTRACER = 0]
-        P[mlockall MCL_CURRENT|MCL_FUTURE]
+        P["mlockall MCL_CURRENT | MCL_FUTURE"]
         Q[SIGPIPE ignored]
     end
 
@@ -667,12 +667,12 @@ stateDiagram-v2
     Init --> HardenProcess: harden_process()
     HardenProcess --> ParseArgs: Parse CLI arguments
 
-    ParseArgs --> ListenMode: "listen" / "l" / "server" / "s"
-    ParseArgs --> ConnectMode: "connect" / "c" / "client"
+    ParseArgs --> ListenMode: listen / l / server / s
+    ParseArgs --> ConnectMode: connect / c / client
     ParseArgs --> Error: Invalid arguments
 
-    ListenMode --> WaitingForPeer: Server::accept_peer()
-    ConnectMode --> Connecting: Client::connect_to()
+    ListenMode --> WaitingForPeer: Server accept_peer
+    ConnectMode --> Connecting: Client connect_to
 
     WaitingForPeer --> KeyExchange: Peer connected
     Connecting --> KeyExchange: TCP connected
@@ -682,11 +682,11 @@ stateDiagram-v2
     KeyExchange --> InteractiveChat: Handshake success
     KeyExchange --> Error: Key exchange failed
 
-    InteractiveChat --> InteractiveChat: Send/Receive messages
-    InteractiveChat --> InteractiveChat: Send/Receive files
-    InteractiveChat --> Cleanup: /quit or peer disconnect
+    InteractiveChat --> InteractiveChat: Send or receive messages
+    InteractiveChat --> InteractiveChat: Send or receive files
+    InteractiveChat --> Cleanup: quit or peer disconnect
 
-    Cleanup --> SecureExit: session.disconnect() → secure_zero()
+    Cleanup --> SecureExit: disconnect then secure_zero
     SecureExit --> [*]
     Error --> [*]
 ```
