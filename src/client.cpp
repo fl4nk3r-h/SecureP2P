@@ -1,42 +1,39 @@
 #include "../include/client.hpp"
+#include <cstring>
 
-void Client::run()
+std::unique_ptr<PeerSession> Client::connect_to(const std::string &host, uint16_t port)
 {
-#ifdef _WIN32
-    WSADATA wsaData;
-    int wsaInit = WSAStartup(MAKEWORD(2, 2), &wsaData);
-    if (wsaInit != 0)
+    int sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock < 0)
     {
-        std::cerr << "WSAStartup failed: " << wsaInit << std::endl;
-        return;
+        std::cerr << color::RED << "[!] Socket creation failed" << color::RESET << std::endl;
+        return nullptr;
     }
-#endif
 
-    int sock = 0;
-    struct sockaddr_in serv_addr;
-    char buffer[BUFFER_SIZE] = {0};
+    struct sockaddr_in addr{};
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(port);
 
-    sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (inet_pton(AF_INET, host.c_str(), &addr.sin_addr) <= 0)
+    {
+        std::cerr << color::RED << "[!] Invalid address: " << host << color::RESET << std::endl;
+        close(sock);
+        return nullptr;
+    }
 
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(PORT);
+    std::cout << color::CYAN << "[*] Connecting to " << host << ":" << port
+              << " ..." << color::RESET << std::endl;
 
-    inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr);
+    if (connect(sock, reinterpret_cast<sockaddr *>(&addr), sizeof(addr)) < 0)
+    {
+        std::cerr << color::RED << "[!] Connection failed: " << strerror(errno)
+                  << color::RESET << std::endl;
+        close(sock);
+        return nullptr;
+    }
 
-    connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
+    std::cout << color::GREEN << "[+] Connected to " << host << ":" << port
+              << color::RESET << std::endl;
 
-    std::string msg = "Hello from client!";
-    send(sock, msg.c_str(), msg.size(), 0);
-
-    read(sock, buffer, BUFFER_SIZE);
-    std::cout << "Server reply: " << buffer << std::endl;
-
-    close(sock);
-
-#ifdef _WIN32
-    closesocket(sock);
-    WSACleanup();
-#else
-    close(sock);
-#endif
+    return std::make_unique<PeerSession>(sock, false);
 }

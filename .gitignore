@@ -1,0 +1,30 @@
+# Build
+build/
+cmake-build-*/
+_deps/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.history/
+
+# Compiled objects
+*.o
+*.d
+*.a
+*.so
+*.dylib
+
+# Binaries
+secureP2P
+secureP2P_tests
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Received files from chat sessions
+received_files/

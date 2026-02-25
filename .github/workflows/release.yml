@@ -1,0 +1,69 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*" # Triggers on tags like v1.0.0, v0.2.1, etc.
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y build-essential cmake pkg-config libssl-dev ninja-build
+
+      - name: Cache liboqs
+        id: cache-liboqs
+        uses: actions/cache@v4
+        with:
+          path: /usr/local/lib/liboqs*
+          key: liboqs-0.12.0-${{ runner.os }}
+
+      - name: Install liboqs
+        if: steps.cache-liboqs.outputs.cache-hit != 'true'
+        run: |
+          git clone --depth 1 --branch 0.12.0 https://github.com/open-quantum-safe/liboqs.git
+          cd liboqs && mkdir build && cd build
+          cmake -GNinja -DCMAKE_INSTALL_PREFIX=/usr/local -DBUILD_SHARED_LIBS=ON ..
+          ninja
+          sudo ninja install
+          sudo ldconfig
+
+      - name: Update linker cache
+        if: steps.cache-liboqs.outputs.cache-hit == 'true'
+        run: sudo ldconfig
+
+      - name: Build SecureP2P
+        run: |
+          mkdir -p build && cd build
+          cmake -DCMAKE_BUILD_TYPE=Release ..
+          make -j$(nproc)
+
+      - name: Run tests
+        run: |
+          cd build
+          ./secureP2P_tests
+
+      - name: Package binary
+        run: |
+          cd build
+          strip secureP2P
+          tar czf secureP2P-${{ github.ref_name }}-linux-x86_64.tar.gz secureP2P
+          sha256sum secureP2P-${{ github.ref_name }}-linux-x86_64.tar.gz > checksums-sha256.txt
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            build/secureP2P-${{ github.ref_name }}-linux-x86_64.tar.gz
+            build/checksums-sha256.txt
